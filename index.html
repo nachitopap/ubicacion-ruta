@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#147451" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icono.svg" type="image/svg+xml" />
+    <title>Ubicacion Ruta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./"><i data-lucide="route"></i><span>Ubicacion<span class="brand-accent"> Ruta</span></span></a>
+      <div class="account"><span id="account-email">Mi espacio privado</span><button id="logout" class="icon-button" title="Cerrar sesion" aria-label="Cerrar sesion" hidden><i data-lucide="log-out"></i></button></div>
+    </header>
+    <nav class="navegacion-vistas" aria-label="Vistas de la aplicacion">
+      <a href="?vista=mapa" data-vista="mapa"><i data-lucide="route"></i>Mapa</a>
+      <a href="?vista=manual" data-vista="manual"><i data-lucide="map-pinned"></i>Crear ruta</a>
+      <a href="?vista=captura" data-vista="captura"><i data-lucide="map-pin-plus"></i>Tomar ubicacion</a>
+    </nav>
+    <div id="message" class="message" role="status" aria-live="polite">Iniciando...</div>
+    <main class="workspace">
+      <aside class="sidebar">
+        <section id="auth-panel">
+          <div class="section-label">MI CUENTA</div>
+          <h1>Tus recorridos</h1>
+          <form id="auth-form">
+            <label for="email">Correo electronico</label>
+            <input id="email" type="email" autocomplete="email" required placeholder="tu@correo.com" maxlength="254" />
+            <label for="password">Contrasena</label>
+            <input id="password" type="password" autocomplete="current-password" required minlength="8" placeholder="Minimo 8 caracteres" />
+            <button class="primary" type="submit" value="login"><i data-lucide="log-in"></i>Entrar</button>
+            <button class="secondary" type="submit" value="signup"><i data-lucide="user-plus"></i>Crear cuenta</button>
+          </form>
+          <button id="reset-password" class="text-button" type="button">Recuperar contrasena</button>
+        </section>
+        <section id="recovery-panel" hidden>
+          <h1>Nueva contrasena</h1>
+          <form id="recovery-form">
+            <label for="new-password">Contrasena</label>
+            <input id="new-password" type="password" minlength="8" autocomplete="new-password" required />
+            <button class="primary" type="submit"><i data-lucide="check"></i>Guardar contrasena</button>
+          </form>
+        </section>
+        <section id="panel-ruta-manual" hidden>
+          <div class="section-label">PLANIFICAR</div>
+          <h1 id="titulo-editor">Crear ruta</h1>
+          <p id="aviso-editor" class="empty-state">Arrastra los puntos para moverlos o eliminalos desde la lista.</p>
+          <form id="formulario-ruta-manual">
+            <label for="nombre-ruta-manual">Nombre del recorrido</label>
+            <input id="nombre-ruta-manual" required maxlength="100" placeholder="Ruta del fin de semana" />
+            <div class="resumen-borrador"><span>Puntos marcados</span><strong id="cantidad-borrador" aria-live="polite">0</strong></div>
+            <div class="herramientas-borrador">
+              <button id="deshacer-punto" type="button" class="icon-button" title="Deshacer ultimo punto" aria-label="Deshacer ultimo punto"><i data-lucide="undo-2"></i></button>
+              <button id="limpiar-borrador" type="button" class="icon-button danger" title="Borrar todos los puntos" aria-label="Borrar todos los puntos"><i data-lucide="trash-2"></i></button>
+              <button id="encuadrar-borrador" type="button" class="icon-button" title="Ver todos los puntos" aria-label="Ver todos los puntos"><i data-lucide="scan"></i></button>
+            </div>
+            <button id="guardar-ruta-manual" type="submit" class="primary"><i data-lucide="save"></i><span id="texto-guardar-ruta">Guardar ruta</span></button>
+          </form>
+          <button id="trazar-calles" type="button" class="secondary">Seguir calles y quitar puntos cercanos</button>
+          <p class="empty-state">Agrupa puntos consecutivos a menos de 10 m y agrega vertices para seguir curvas y esquinas. Conserva inicio, fin y orden de paso, incluidas las segundas pasadas. Rechaza desvios mayores de 25 m respecto a cada segmento y rodeos excesivos. Si el perfil de automovil impide una vuelta en U, conserva el borrador en vez de agregar otras calles. Revisa siempre la propuesta.</p>
+          <button id="acercar-puntos" type="button" class="secondary">Acercar puntos a calles</button>
+          <p class="empty-state">Acerca cada punto a una calle cercana y permite revisar antes de guardar. No necesita reconocer todo el recorrido GPS. Maximo 100 m por punto; puede elegir otra calle y las lineas entre puntos siguen siendo rectas.</p>
+          <button id="ajustar-borrador" type="button" class="secondary">Ajustar recorrido a calles</button>
+          <button id="cancelar-ajuste" type="button" class="secondary" hidden>Cancelar ajuste</button>
+          <button id="cancelar-edicion" type="button" class="secondary" hidden>Cancelar edicion</button>
+          <p id="diagnostico-ajuste" class="empty-state" role="status" hidden></p>
+          <p id="aviso-trazado-calles" class="empty-state" role="status" hidden></p>
+          <p id="aviso-puntos-acercados" class="empty-state" role="status" hidden>Vista previa sin guardar: puntos acercados a calles. Rosa = propuesta, gris = ruta activa original al editar. Revisa las calles elegidas; los segmentos entre puntos son rectos y pueden cortar esquinas. Puedes mover puntos antes de guardar o cancelar la edicion para descartar la propuesta.</p>
+          <ol id="lista-borrador" class="point-list"></ol>
+        </section>
+        <section id="routes-panel" hidden>
+          <div class="section-label">MIS RECORRIDOS</div>
+          <h1>Cuaderno de rutas</h1>
+          <form id="route-form" class="new-route">
+            <label for="route-name">Nueva ruta</label>
+            <div class="input-action"><input id="route-name" required maxlength="100" placeholder="Paseo de hoy" /><button type="submit" class="icon-button primary" title="Crear ruta" aria-label="Crear ruta"><i data-lucide="plus"></i></button></div>
+          </form>
+          <label for="route-select">Ruta actual</label>
+          <select id="route-select" aria-label="Ruta actual"><option value="">Sin rutas</option></select>
+          <div class="route-actions">
+            <button id="export" class="secondary"><i data-lucide="download"></i>Exportar</button>
+            <button id="fit" class="icon-button" title="Ver ruta completa" aria-label="Ver ruta completa"><i data-lucide="scan"></i></button>
+            <button id="refresh" class="icon-button" title="Actualizar rutas" aria-label="Actualizar rutas"><i data-lucide="refresh-cw"></i></button>
+            <button id="delete-route" class="icon-button danger" title="Eliminar ruta" aria-label="Eliminar ruta"><i data-lucide="trash-2"></i></button>
+          </div>
+          <div class="herramientas-edicion">
+            <button id="editar-ruta" type="button">Editar ruta</button>
+            <button id="ajustar-ruta" type="button">Ajustar a calles</button>
+            <button id="ver-respaldos" type="button">Ver respaldos inactivos</button>
+          </div>
+          <ol id="lista-respaldos" class="point-list"></ol>
+          <div class="history-heading"><h2>Ubicaciones</h2><span id="point-count">0</span></div>
+          <ol id="point-list" class="point-list"></ol>
+          <p id="empty-points" class="empty-state">Crea una ruta para comenzar.</p>
+        </section>
+        <footer class="sidebar-footer"><i data-lucide="lock-keyhole"></i><span>Rutas privadas</span></footer>
+      </aside>
+      <section id="pantalla-captura" class="pantalla-captura" aria-labelledby="titulo-captura" hidden>
+        <div class="cabecera-captura"><span class="section-label">REGISTRO GPS</span><h1 id="titulo-captura">Tomar ubicacion</h1></div>
+        <div class="contador-captura"><strong id="puntos-capturados" aria-live="polite" aria-atomic="true">0</strong><span>Puntos guardados en esta ruta</span></div>
+        <label for="ruta-captura">Ruta para registrar</label>
+        <select id="ruta-captura"><option value="">Sin rutas</option></select>
+        <details id="nueva-ruta-captura"><summary>Nueva ruta</summary><form id="formulario-ruta-captura"><label for="nombre-ruta-captura">Nombre de la ruta</label><div class="input-action"><input id="nombre-ruta-captura" required maxlength="100" placeholder="Paseo de hoy" /><button type="submit" class="icon-button primary" title="Crear ruta desde el telefono" aria-label="Crear ruta desde el telefono"><i data-lucide="plus"></i></button></div></form></details>
+        <label for="intervalo">Intervalo</label>
+        <select id="intervalo"><option value="5">Cada 5 segundos</option><option value="10" selected>Cada 10 segundos</option></select>
+        <label class="opcion-pantalla" for="mantener-pantalla"><input id="mantener-pantalla" type="checkbox" checked />Mantener pantalla encendida</label>
+        <p id="estado-pantalla" class="estado-pantalla" aria-live="polite">Pantalla sin bloqueo</p>
+        <div class="acciones-seguimiento">
+          <button id="iniciar-seguimiento" class="primary"><i data-lucide="play"></i>Activar</button>
+          <button id="detener-seguimiento" class="secondary danger" disabled><i data-lucide="square"></i>Desactivar</button>
+        </div>
+        <p id="estado-seguimiento" class="estado-pantalla estado-captura" aria-live="polite">Registro desactivado</p>
+        <button id="record" class="secondary record"><i data-lucide="map-pin-plus"></i><span>Registrar ubicacion</span></button>
+      </section>
+      <section id="pantalla-mapa" class="map-section" aria-label="Mapa del recorrido">
+        <div class="map-heading"><div><span class="section-label">EXPLORAR</span><h2 id="map-title">Mi mapa</h2></div><span class="map-tag"><span></span>Mapa</span></div>
+        <div id="estado-mapa" role="status" aria-live="polite" hidden><span>No se pudo cargar el mapa. Revisa tu conexion o intenta de nuevo.</span><button id="reintentar-mapa" class="icon-button" title="Reintentar mapa" aria-label="Reintentar mapa"><i data-lucide="refresh-cw"></i></button></div>
+        <div id="map" aria-label="Mapa interactivo"></div>
+        <p class="empty-state">Sentido: punto 1 hacia 2, 3 y siguientes. Solo el ajuste solicitado estima un recorrido por calles; no es navegacion ni una medicion GPS. Ajuste: OSRM / <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">&copy; OpenStreetMap contributors</a>. <a href="https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server" target="_blank" rel="noopener noreferrer">Limites del servidor de pruebas</a>.</p>
+        <div class="map-summary">
+          <div><span>PUNTOS</span><strong id="stat-points">0</strong></div>
+          <div><span>DISTANCIA ENTRE PUNTOS</span><strong id="stat-distance">0 m</strong></div>
+          <div><span>ULTIMO REGISTRO</span><strong id="stat-time">Sin registros</strong></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/principal.js"></script>
+  </body>
+</html>
